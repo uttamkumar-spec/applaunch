@@ -1,0 +1,19 @@
+# --- Secrets / environment files (never commit real values) ---
+.env
+.env.*
+!.env.example
+!*.env.example
+env.json
+!env.example.json
+*.pem
+*.key
+*.p12
+*.jks
+*credentials*.json
+!*credentials*.example.json
+
+# --- OS / editor junk ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
