@@ -38,3 +38,27 @@ When a new requirement comes in, before writing any code:
   it, and wait for a decision unless the fix is small and unambiguous.
 - If it doesn't conflict with anything, proceed normally — this isn't a
   license to over-ask, only to flag genuine breaking impact.
+
+## 3. Confirm the design before building it — don't assume
+
+For anything with real product/UX shape — a new screen, a form and the
+fields it collects, a flow's steps and ordering, tone/copy, what a feature
+actually asks the user or shows them — do not silently decide the details
+and build them. This is broader than rule #2 (breaking-impact only applies
+to existing features); this applies even to brand-new, non-conflicting work.
+
+- Before writing the screen/flow, lay out the proposed content in the chat
+  (fields, steps, options, copy — whatever is user-facing and judgment-based)
+  and get explicit confirmation, or ask targeted clarifying questions when
+  the requirement is ambiguous.
+- "Full clarity" means the field/step-level shape is confirmed, not just the
+  high-level feature name. E.g. "build the onboarding quiz" is not enough
+  clarity on its own — what it asks, in what order, and why, needs to be
+  agreed first.
+- Purely mechanical/internal implementation choices (variable names, file
+  structure, which widget to use for a given confirmed field) don't need
+  sign-off — this rule is about user-facing product decisions, not code
+  style.
+- If something already built this way turns out wrong, don't just patch it
+  quietly either — surface what was assumed and confirm the correction
+  before rebuilding.
