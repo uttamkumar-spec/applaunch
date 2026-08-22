@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/option_picker.dart';
 import '../models/onboarding_data.dart';
 
 final onboardingDataProvider = StateProvider<OnboardingData>((ref) => OnboardingData());
@@ -17,6 +18,10 @@ const _steps = [
   _Step(
     title: "Where are you starting from?",
     subtitle: "There's no wrong answer — we just want to meet you where you are.",
+  ),
+  _Step(
+    title: "Have you worked with a coach before?",
+    subtitle: "In person, online, a class — anything counts.",
   ),
   _Step(
     title: "What matters most to you right now?",
@@ -49,13 +54,20 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
     final data = ref.read(onboardingDataProvider);
     switch (_step) {
       case 0:
-        return data.experienceLevel != null;
+        return data.experienceLevel != null &&
+            (data.experienceLevel != 'other' || data.experienceLevelOtherText.trim().isNotEmpty);
       case 1:
-        return data.primaryGoal != null;
+        return data.hasWorkedWithCoachBefore != null &&
+            (data.hasWorkedWithCoachBefore != true || data.coachHistoryText.trim().isNotEmpty);
       case 2:
-        return data.daysPerWeek != null;
+        return data.primaryGoal != null &&
+            (data.primaryGoal != 'other' || data.primaryGoalOtherText.trim().isNotEmpty);
       case 3:
-        return data.equipmentAccess != null;
+        return data.daysPerWeekSelection != null &&
+            (data.daysPerWeekSelection != 'other' || data.daysPerWeekOtherText.trim().isNotEmpty);
+      case 4:
+        return data.equipmentAccess != null &&
+            (data.equipmentAccess != 'other' || data.equipmentAccessOtherText.trim().isNotEmpty);
     }
     return false;
   }
@@ -127,7 +139,7 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
   Widget _buildStepBody(OnboardingData data, StateController<OnboardingData> notifier) {
     switch (_step) {
       case 0:
-        return _OptionList(
+        return OptionPicker(
           options: const {
             'brand_new': "I'm brand new to exercise",
             'tried_before': "I've tried before but didn't stick with it",
@@ -135,9 +147,19 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
           },
           selected: data.experienceLevel,
           onSelect: (v) => notifier.update((d) => d..experienceLevel = v),
+          otherText: data.experienceLevelOtherText,
+          onOtherTextChanged: (v) => notifier.update((d) => d..experienceLevelOtherText = v),
         );
       case 1:
-        return _OptionList(
+        return _YesNoWithDetail(
+          selected: data.hasWorkedWithCoachBefore,
+          onSelect: (v) => notifier.update((d) => d..hasWorkedWithCoachBefore = v),
+          detailText: data.coachHistoryText,
+          onDetailTextChanged: (v) => notifier.update((d) => d..coachHistoryText = v),
+          detailHint: "Who was it, or where — tell us a bit about it",
+        );
+      case 2:
+        return OptionPicker(
           options: const {
             'lose_weight': "Lose weight",
             'build_strength': "Build strength",
@@ -146,20 +168,24 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
           },
           selected: data.primaryGoal,
           onSelect: (v) => notifier.update((d) => d..primaryGoal = v),
+          otherText: data.primaryGoalOtherText,
+          onOtherTextChanged: (v) => notifier.update((d) => d..primaryGoalOtherText = v),
         );
-      case 2:
-        return _OptionList(
+      case 3:
+        return OptionPicker(
           options: const {
             '2': "2 days a week",
             '3': "3 days a week",
             '4': "4 days a week",
             '5': "5+ days a week",
           },
-          selected: data.daysPerWeek?.toString(),
-          onSelect: (v) => notifier.update((d) => d..daysPerWeek = int.parse(v)),
+          selected: data.daysPerWeekSelection,
+          onSelect: (v) => notifier.update((d) => d..daysPerWeekSelection = v),
+          otherText: data.daysPerWeekOtherText,
+          onOtherTextChanged: (v) => notifier.update((d) => d..daysPerWeekOtherText = v),
         );
-      case 3:
-        return _OptionList(
+      case 4:
+        return OptionPicker(
           options: const {
             'none': "No equipment — just my body",
             'home_basics': "A few basics at home (bands, dumbbells)",
@@ -167,59 +193,102 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
           },
           selected: data.equipmentAccess,
           onSelect: (v) => notifier.update((d) => d..equipmentAccess = v),
+          otherText: data.equipmentAccessOtherText,
+          onOtherTextChanged: (v) => notifier.update((d) => d..equipmentAccessOtherText = v),
         );
     }
     return const SizedBox.shrink();
   }
 }
 
-class _OptionList extends StatelessWidget {
-  const _OptionList({required this.options, required this.selected, required this.onSelect});
+/// Yes/No question that reveals a free-text field when the answer is Yes.
+class _YesNoWithDetail extends StatelessWidget {
+  const _YesNoWithDetail({
+    required this.selected,
+    required this.onSelect,
+    required this.detailText,
+    required this.onDetailTextChanged,
+    required this.detailHint,
+  });
 
-  final Map<String, String> options;
-  final String? selected;
-  final ValueChanged<String> onSelect;
+  final bool? selected;
+  final ValueChanged<bool> onSelect;
+  final String detailText;
+  final ValueChanged<String> onDetailTextChanged;
+  final String detailHint;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
-      children: options.entries.map((e) {
-        final isSelected = e.key == selected;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => onSelect(e.key),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.primaryLight : AppColors.surface,
+      children: [
+        _YesNoTile(label: 'Yes', isSelected: selected == true, onTap: () => onSelect(true)),
+        _YesNoTile(label: 'No', isSelected: selected == false, onTap: () => onSelect(false)),
+        if (selected == true) ...[
+          const SizedBox(height: 12),
+          TextField(
+            autofocus: true,
+            maxLines: 3,
+            decoration: InputDecoration(
+              hintText: detailHint,
+              filled: true,
+              fillColor: AppColors.surface,
+              border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : const Color(0xFFE3E6DF),
-                  width: isSelected ? 1.5 : 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      e.value,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ),
-                    ),
-                  ),
-                  if (isSelected)
-                    const Icon(Icons.check_circle, color: AppColors.primary)
-                  else
-                    const Icon(Icons.circle_outlined, color: Color(0xFFCBD1C7)),
-                ],
+                borderSide: const BorderSide(color: Color(0xFFE3E6DF)),
               ),
             ),
+            controller: TextEditingController(text: detailText)
+              ..selection = TextSelection.collapsed(offset: detailText.length),
+            onChanged: onDetailTextChanged,
           ),
-        );
-      }).toList(),
+        ],
+      ],
+    );
+  }
+}
+
+class _YesNoTile extends StatelessWidget {
+  const _YesNoTile({required this.label, required this.isSelected, required this.onTap});
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryLight : AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : const Color(0xFFE3E6DF),
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                ),
+              ),
+              if (isSelected)
+                const Icon(Icons.check_circle, color: AppColors.primary)
+              else
+                const Icon(Icons.circle_outlined, color: Color(0xFFCBD1C7)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
