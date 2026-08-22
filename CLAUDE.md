@@ -23,7 +23,7 @@ task; don't wait to be reminded.
   placeholder, not a real value. The root `.gitignore` and `backend/.gitignore`
   are the safety net — don't rely on memory alone.
 
-## 2. Call out breaking impact before building a new feature
+## 2. Call out breaking impact, technical debt, and bloat before building
 
 When a new requirement comes in, before writing any code:
 
@@ -36,8 +36,17 @@ When a new requirement comes in, before writing any code:
   *before* starting the build — don't silently work around it or build first
   and mention it after. Lay out what would break and the options for handling
   it, and wait for a decision unless the fix is small and unambiguous.
-- If it doesn't conflict with anything, proceed normally — this isn't a
-  license to over-ask, only to flag genuine breaking impact.
+- Separately from breaking things outright, also flag it up front if the
+  requested approach would introduce technical debt or codebase bloat —
+  e.g. a parallel/duplicate way of doing something already handled
+  elsewhere, a one-off pattern that diverges from the existing architecture,
+  a shortcut that will need revisiting soon, or a dependency/abstraction
+  that's heavier than the feature needs. Say so and propose the leaner
+  alternative before building, rather than building the heavier version and
+  refactoring later. The goal is to keep future refactor need and codebase
+  weight low, not to accumulate "fix it later" debt.
+- If it doesn't conflict with anything and doesn't add debt/bloat, proceed
+  normally — this isn't a license to over-ask, only to flag genuine risk.
 
 ## 3. Confirm the design before building it — don't assume
 
