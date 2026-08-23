@@ -43,7 +43,7 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () => context.go('/login'),
+                onPressed: () => context.go('/auth'),
                 child: const Text('I already have an account'),
               ),
             ],

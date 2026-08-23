@@ -6,8 +6,7 @@ import '../../features/admin/screens/admin_home_screen.dart';
 import '../../features/ai_coach/screens/ai_chat_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/providers/profile_provider.dart';
-import '../../features/auth/screens/login_screen.dart';
-import '../../features/auth/screens/signup_screen.dart';
+import '../../features/auth/screens/google_sign_in_screen.dart';
 import '../../features/coach/screens/coach_finder_screen.dart';
 import '../../features/coach/screens/coach_home_screen.dart';
 import '../../features/home/screens/home_screen.dart';
@@ -36,7 +35,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!Env.isSupabaseConfigured) return null;
 
       final loggedIn = ref.read(currentUserProvider) != null;
-      final loggingInRoute = ['/login', '/signup', '/onboarding', '/'].contains(state.matchedLocation);
+      final loggingInRoute = ['/auth', '/onboarding', '/'].contains(state.matchedLocation);
 
       if (!loggedIn && !loggingInRoute) return '/';
 
@@ -46,7 +45,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         final onWrongRoleHome = (state.matchedLocation == '/home' && role != 'athlete') ||
             (state.matchedLocation == '/coach-home' && role != 'coach') ||
             (state.matchedLocation == '/admin-home' && role != 'admin');
-        if (state.matchedLocation == '/' || state.matchedLocation == '/login' || onWrongRoleHome) {
+        if (state.matchedLocation == '/' || state.matchedLocation == '/auth' || onWrongRoleHome) {
           return home;
         }
       }
@@ -55,8 +54,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/', builder: (context, state) => const WelcomeScreen()),
       GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingQuizScreen()),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+      GoRoute(path: '/auth', builder: (context, state) => const GoogleSignInScreen()),
       GoRoute(path: '/coach-finder', builder: (context, state) => const CoachFinderScreen()),
       GoRoute(path: '/coach-home', builder: (context, state) => const CoachHomeScreen()),
       GoRoute(path: '/admin-home', builder: (context, state) => const AdminHomeScreen()),

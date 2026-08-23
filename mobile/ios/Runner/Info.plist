@@ -32,6 +32,15 @@
 	<string>FitMoveLab records audio along with video when you film a form check.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>FitMoveLab needs access to your photos to attach a form-check picture or video.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.fitmovelab.fitmovelab</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

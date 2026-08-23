@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../auth/providers/profile_provider.dart';
 import '../../progress/providers/progress_provider.dart';
 import '../../workouts/providers/workout_provider.dart';
 import '../../workouts/screens/workout_day_screen.dart';
@@ -13,6 +14,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(pendingOnboardingFlushProvider);
     final user = ref.watch(currentUserProvider);
     final firstName = (user?.userMetadata?['full_name'] as String?)?.split(' ').first;
     final planAsync = ref.watch(activePlanProvider);
@@ -26,7 +28,7 @@ class HomeScreen extends ConsumerWidget {
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
               await ref.read(authControllerProvider).signOut();
-              if (context.mounted) context.go('/login');
+              if (context.mounted) context.go('/');
             },
           ),
         ],

@@ -109,7 +109,7 @@ class AdminHomeScreen extends ConsumerWidget {
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
               await ref.read(authControllerProvider).signOut();
-              if (context.mounted) context.go('/login');
+              if (context.mounted) context.go('/');
             },
           ),
         ],

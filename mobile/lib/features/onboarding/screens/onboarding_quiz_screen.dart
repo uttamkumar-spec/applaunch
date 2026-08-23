@@ -76,7 +76,7 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
     if (_step < _steps.length - 1) {
       setState(() => _step++);
     } else {
-      context.go('/signup');
+      context.go('/auth');
     }
   }
 

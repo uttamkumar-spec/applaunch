@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -33,25 +34,16 @@ class AuthController {
   AuthController(this._client);
   final SupabaseClient _client;
 
-  Future<void> signUp({
-    required String email,
-    required String password,
-    required String fullName,
-  }) async {
-    await _client.auth.signUp(
-      email: email,
-      password: password,
-      data: {'full_name': fullName},
+  /// Google is the only sign-in method — this covers both new and
+  /// returning users, since Supabase creates the auth record (keyed by
+  /// its UUID, same as everywhere else in the app) on first sign-in and
+  /// simply logs in on every one after that.
+  Future<void> signInWithGoogle() async {
+    await _client.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: kIsWeb ? null : 'com.fitmovelab.fitmovelab://login-callback/',
     );
   }
 
-  Future<void> signIn({required String email, required String password}) async {
-    await _client.auth.signInWithPassword(email: email, password: password);
-  }
-
   Future<void> signOut() => _client.auth.signOut();
-
-  Future<void> resetPassword(String email) {
-    return _client.auth.resetPasswordForEmail(email);
-  }
 }
