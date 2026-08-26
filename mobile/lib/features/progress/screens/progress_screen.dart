@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -71,35 +70,22 @@ class ProgressScreen extends ConsumerWidget {
                           const SizedBox(height: 16),
                           SizedBox(
                             height: 140,
-                            child: BarChart(
-                              BarChartData(
-                                maxY: 1,
-                                barTouchData: BarTouchData(enabled: false),
-                                gridData: const FlGridData(show: false),
-                                borderData: FlBorderData(show: false),
-                                titlesData: const FlTitlesData(
-                                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                ),
-                                barGroups: List.generate(
-                                  summary.weeklyCompletion.length,
-                                  (i) => BarChartGroupData(
-                                    x: i,
-                                    barRods: [
-                                      BarChartRodData(
-                                        toY: summary.weeklyCompletion[i].clamp(0.05, 1.0),
-                                        color: summary.weeklyCompletion[i] > 0
-                                            ? AppColors.primary
-                                            : AppColors.primaryLight,
-                                        width: 18,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                    ],
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: List.generate(summary.weeklyCompletion.length, (i) {
+                                final completion = summary.weeklyCompletion[i].clamp(0.05, 1.0);
+                                return Container(
+                                  width: 18,
+                                  height: 140 * completion,
+                                  decoration: BoxDecoration(
+                                    color: summary.weeklyCompletion[i] > 0
+                                        ? AppColors.primary
+                                        : AppColors.primaryLight,
+                                    borderRadius: BorderRadius.circular(6),
                                   ),
-                                ),
-                              ),
+                                );
+                              }),
                             ),
                           ),
                           const SizedBox(height: 4),
