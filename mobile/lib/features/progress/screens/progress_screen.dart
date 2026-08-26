@@ -16,16 +16,23 @@ class ProgressScreen extends ConsumerWidget {
     final activitiesAsync = ref.watch(stravaActivitiesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Progress')),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(progressSummaryProvider);
-          ref.invalidate(stravaConnectedProvider);
-          ref.invalidate(stravaActivitiesProvider);
-        },
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
+      appBar: AppBar(
+        title: const Text('Progress'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Refresh',
+            onPressed: () {
+              ref.invalidate(progressSummaryProvider);
+              ref.invalidate(stravaConnectedProvider);
+              ref.invalidate(stravaActivitiesProvider);
+            },
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
             summaryAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
@@ -135,7 +142,6 @@ class ProgressScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
