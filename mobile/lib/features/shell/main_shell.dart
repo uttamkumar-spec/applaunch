@@ -29,7 +29,7 @@ class MainShell extends StatelessWidget {
         ),
         items: List.generate(
           _labels.length,
-          (i) => BottomNavigationBarItem(icon: Icon(_icons[i]), label: _labels[i]),
+          (i) => BottomNavigationBarItem(icon: Icon(_icons[i]), label: _labels[i], tooltip: ''),
         ),
       ),
     );
