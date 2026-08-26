@@ -146,16 +146,16 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
             'getting_back_into_it': "I used to be active, getting back into it",
           },
           selected: data.experienceLevel,
-          onSelect: (v) => notifier.update((d) => d..experienceLevel = v),
+          onSelect: (v) => notifier.update((d) => d.clone()..experienceLevel = v),
           otherText: data.experienceLevelOtherText,
-          onOtherTextChanged: (v) => notifier.update((d) => d..experienceLevelOtherText = v),
+          onOtherTextChanged: (v) => notifier.update((d) => d.clone()..experienceLevelOtherText = v),
         );
       case 1:
         return _YesNoWithDetail(
           selected: data.hasWorkedWithCoachBefore,
-          onSelect: (v) => notifier.update((d) => d..hasWorkedWithCoachBefore = v),
+          onSelect: (v) => notifier.update((d) => d.clone()..hasWorkedWithCoachBefore = v),
           detailText: data.coachHistoryText,
-          onDetailTextChanged: (v) => notifier.update((d) => d..coachHistoryText = v),
+          onDetailTextChanged: (v) => notifier.update((d) => d.clone()..coachHistoryText = v),
           detailHint: "Who was it, or where — tell us a bit about it",
         );
       case 2:
@@ -167,9 +167,9 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
             'more_energy': "Have more energy day-to-day",
           },
           selected: data.primaryGoal,
-          onSelect: (v) => notifier.update((d) => d..primaryGoal = v),
+          onSelect: (v) => notifier.update((d) => d.clone()..primaryGoal = v),
           otherText: data.primaryGoalOtherText,
-          onOtherTextChanged: (v) => notifier.update((d) => d..primaryGoalOtherText = v),
+          onOtherTextChanged: (v) => notifier.update((d) => d.clone()..primaryGoalOtherText = v),
         );
       case 3:
         return OptionPicker(
@@ -180,9 +180,9 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
             '5': "5+ days a week",
           },
           selected: data.daysPerWeekSelection,
-          onSelect: (v) => notifier.update((d) => d..daysPerWeekSelection = v),
+          onSelect: (v) => notifier.update((d) => d.clone()..daysPerWeekSelection = v),
           otherText: data.daysPerWeekOtherText,
-          onOtherTextChanged: (v) => notifier.update((d) => d..daysPerWeekOtherText = v),
+          onOtherTextChanged: (v) => notifier.update((d) => d.clone()..daysPerWeekOtherText = v),
         );
       case 4:
         return OptionPicker(
@@ -192,9 +192,9 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
             'full_gym': "I have access to a full gym",
           },
           selected: data.equipmentAccess,
-          onSelect: (v) => notifier.update((d) => d..equipmentAccess = v),
+          onSelect: (v) => notifier.update((d) => d.clone()..equipmentAccess = v),
           otherText: data.equipmentAccessOtherText,
-          onOtherTextChanged: (v) => notifier.update((d) => d..equipmentAccessOtherText = v),
+          onOtherTextChanged: (v) => notifier.update((d) => d.clone()..equipmentAccessOtherText = v),
         );
     }
     return const SizedBox.shrink();

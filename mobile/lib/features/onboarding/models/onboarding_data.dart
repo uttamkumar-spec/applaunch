@@ -41,6 +41,23 @@ class OnboardingData {
 
   List<String> focusAreas; // 'full_body' | 'cardio' | 'strength' | 'flexibility'
 
+  /// A distinct copy with the same values — mutate this (not the original)
+  /// when updating a [StateProvider], since handing back the same object
+  /// reference makes Riverpod skip notifying listeners of the change.
+  OnboardingData clone() => OnboardingData(
+        experienceLevel: experienceLevel,
+        experienceLevelOtherText: experienceLevelOtherText,
+        hasWorkedWithCoachBefore: hasWorkedWithCoachBefore,
+        coachHistoryText: coachHistoryText,
+        primaryGoal: primaryGoal,
+        primaryGoalOtherText: primaryGoalOtherText,
+        daysPerWeekSelection: daysPerWeekSelection,
+        daysPerWeekOtherText: daysPerWeekOtherText,
+        equipmentAccess: equipmentAccess,
+        equipmentAccessOtherText: equipmentAccessOtherText,
+        focusAreas: focusAreas,
+      );
+
   bool get isComplete =>
       experienceLevel != null &&
       hasWorkedWithCoachBefore != null &&
