@@ -2,6 +2,7 @@ from functools import wraps
 
 import jwt
 from flask import current_app, g, jsonify, request
+from jwt import PyJWKClient
 
 from .extensions import get_db
 
@@ -19,12 +20,36 @@ def _extract_token() -> str:
     return header[len("Bearer ") :]
 
 
+_jwks_client: PyJWKClient | None = None
+
+
+def _get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        supabase_url = current_app.config["SUPABASE_URL"]
+        _jwks_client = PyJWKClient(f"{supabase_url}/auth/v1/.well-known/jwks.json")
+    return _jwks_client
+
+
 def verify_supabase_jwt(token: str) -> dict:
-    secret = current_app.config["SUPABASE_JWT_SECRET"]
-    if not secret:
-        raise AuthError("Server is not configured for authentication yet", 503)
+    """Supabase signs auth tokens with the shared legacy HS256 secret on
+    older projects, or with an asymmetric key (ES256/RS256) verified via
+    Supabase's published JWKS on newer ones — check which this token uses
+    rather than assuming."""
     try:
-        return jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
+        alg = jwt.get_unverified_header(token).get("alg")
+    except jwt.PyJWTError as exc:
+        raise AuthError(f"Invalid or expired token: {exc}") from exc
+
+    try:
+        if alg == "HS256":
+            secret = current_app.config["SUPABASE_JWT_SECRET"]
+            if not secret:
+                raise AuthError("Server is not configured for authentication yet", 503)
+            return jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
+
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
+        return jwt.decode(token, signing_key.key, algorithms=["ES256", "RS256"], audience="authenticated")
     except jwt.PyJWTError as exc:
         raise AuthError(f"Invalid or expired token: {exc}") from exc
 
