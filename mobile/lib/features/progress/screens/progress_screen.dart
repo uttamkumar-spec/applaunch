@@ -67,6 +67,7 @@ class ProgressScreen extends ConsumerWidget {
                             child: BarChart(
                               BarChartData(
                                 maxY: 1,
+                                barTouchData: BarTouchData(enabled: false),
                                 gridData: const FlGridData(show: false),
                                 borderData: FlBorderData(show: false),
                                 titlesData: const FlTitlesData(

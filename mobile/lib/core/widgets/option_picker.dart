@@ -9,7 +9,7 @@ import '../theme/app_theme.dart';
 /// future product changes.
 ///
 /// [selected] is the option key, or [otherValue] when "Other" is chosen.
-class OptionPicker extends StatelessWidget {
+class OptionPicker extends StatefulWidget {
   const OptionPicker({
     super.key,
     required this.options,
@@ -31,21 +31,51 @@ class OptionPicker extends StatelessWidget {
   final String otherHint;
   final String otherValue;
 
-  bool get _isOtherSelected => selected == otherValue;
+  @override
+  State<OptionPicker> createState() => _OptionPickerState();
+}
+
+class _OptionPickerState extends State<OptionPicker> {
+  late final TextEditingController _controller;
+
+  bool get _isOtherSelected => widget.selected == widget.otherValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.otherText);
+  }
+
+  @override
+  void didUpdateWidget(covariant OptionPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.otherText != _controller.text) {
+      _controller.value = _controller.value.copyWith(
+        text: widget.otherText,
+        selection: TextSelection.collapsed(offset: widget.otherText.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        ...options.entries.map((e) => _OptionTile(
+        ...widget.options.entries.map((e) => _OptionTile(
               label: e.value,
-              isSelected: e.key == selected,
-              onTap: () => onSelect(e.key),
+              isSelected: e.key == widget.selected,
+              onTap: () => widget.onSelect(e.key),
             )),
         _OptionTile(
-          label: otherLabel,
+          label: widget.otherLabel,
           isSelected: _isOtherSelected,
-          onTap: () => onSelect(otherValue),
+          onTap: () => widget.onSelect(widget.otherValue),
         ),
         if (_isOtherSelected) ...[
           const SizedBox(height: 12),
@@ -53,7 +83,7 @@ class OptionPicker extends StatelessWidget {
             autofocus: true,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: otherHint,
+              hintText: widget.otherHint,
               filled: true,
               fillColor: AppColors.surface,
               border: OutlineInputBorder(
@@ -61,9 +91,8 @@ class OptionPicker extends StatelessWidget {
                 borderSide: const BorderSide(color: Color(0xFFE3E6DF)),
               ),
             ),
-            controller: TextEditingController(text: otherText)
-              ..selection = TextSelection.collapsed(offset: otherText.length),
-            onChanged: onOtherTextChanged,
+            controller: _controller,
+            onChanged: widget.onOtherTextChanged,
           ),
         ],
       ],

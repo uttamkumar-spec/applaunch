@@ -202,7 +202,7 @@ class _OnboardingQuizScreenState extends ConsumerState<OnboardingQuizScreen> {
 }
 
 /// Yes/No question that reveals a free-text field when the answer is Yes.
-class _YesNoWithDetail extends StatelessWidget {
+class _YesNoWithDetail extends StatefulWidget {
   const _YesNoWithDetail({
     required this.selected,
     required this.onSelect,
@@ -218,18 +218,48 @@ class _YesNoWithDetail extends StatelessWidget {
   final String detailHint;
 
   @override
+  State<_YesNoWithDetail> createState() => _YesNoWithDetailState();
+}
+
+class _YesNoWithDetailState extends State<_YesNoWithDetail> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.detailText);
+  }
+
+  @override
+  void didUpdateWidget(covariant _YesNoWithDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.detailText != _controller.text) {
+      _controller.value = _controller.value.copyWith(
+        text: widget.detailText,
+        selection: TextSelection.collapsed(offset: widget.detailText.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView(
       children: [
-        _YesNoTile(label: 'Yes', isSelected: selected == true, onTap: () => onSelect(true)),
-        _YesNoTile(label: 'No', isSelected: selected == false, onTap: () => onSelect(false)),
-        if (selected == true) ...[
+        _YesNoTile(label: 'Yes', isSelected: widget.selected == true, onTap: () => widget.onSelect(true)),
+        _YesNoTile(label: 'No', isSelected: widget.selected == false, onTap: () => widget.onSelect(false)),
+        if (widget.selected == true) ...[
           const SizedBox(height: 12),
           TextField(
             autofocus: true,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: detailHint,
+              hintText: widget.detailHint,
               filled: true,
               fillColor: AppColors.surface,
               border: OutlineInputBorder(
@@ -237,9 +267,8 @@ class _YesNoWithDetail extends StatelessWidget {
                 borderSide: const BorderSide(color: Color(0xFFE3E6DF)),
               ),
             ),
-            controller: TextEditingController(text: detailText)
-              ..selection = TextSelection.collapsed(offset: detailText.length),
-            onChanged: onDetailTextChanged,
+            controller: _controller,
+            onChanged: widget.onDetailTextChanged,
           ),
         ],
       ],
