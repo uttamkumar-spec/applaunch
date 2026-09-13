@@ -33,6 +33,20 @@ class ChatController extends StateNotifier<ChatState> {
 
   final ChatService _service;
 
+  /// Loads persisted history from the server, replacing the static welcome
+  /// message once real history exists. Safe to call more than once (e.g. on
+  /// screen resume) — failures are silent so a flaky load never blocks chat.
+  Future<void> loadHistory() async {
+    try {
+      final history = await _service.fetchHistory();
+      if (history.isNotEmpty) {
+        state = state.copyWith(messages: history);
+      }
+    } catch (_) {
+      // Keep the static welcome message — the athlete can still chat.
+    }
+  }
+
   Future<void> send(String text) async {
     if (text.trim().isEmpty || state.busy) return;
     state = state.copyWith(messages: [...state.messages, ChatMessage(role: ChatRole.user, text: text)], busy: true);

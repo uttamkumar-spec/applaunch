@@ -12,3 +12,11 @@ final coachRequestsProvider = FutureProvider.autoDispose((ref) {
 final assignedAthletesProvider = FutureProvider.autoDispose((ref) {
   return ref.watch(coachServiceProvider).fetchAthletes();
 });
+
+final coachGuardrailsProvider = FutureProvider.autoDispose((ref) {
+  return ref.watch(coachServiceProvider).fetchGuardrails();
+});
+
+final pendingMessagesProvider = FutureProvider.autoDispose((ref) {
+  return ref.watch(coachServiceProvider).fetchPendingMessages();
+});

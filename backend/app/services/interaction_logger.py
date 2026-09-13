@@ -28,6 +28,7 @@ VALID_TYPES = {
     "coach_request_created",
     "coach_request_resolved",
     "form_analysis_completed",
+    "chat_routed_to_coach",
 }
 
 

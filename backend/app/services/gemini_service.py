@@ -74,9 +74,48 @@ def _call_gemini(
         raise GeminiError(f"Unexpected Gemini response shape: {data}") from exc
 
 
-def coach_reply(message: str, athlete_context: str | None = None) -> str:
+def coach_reply(
+    message: str,
+    athlete_context: str | None = None,
+    extra_instructions: str | None = None,
+) -> str:
     prompt = message if not athlete_context else f"Athlete context: {athlete_context}\n\nMessage: {message}"
-    return _call_gemini(_COACH_SYSTEM_PROMPT, prompt).strip()
+    system = _COACH_SYSTEM_PROMPT
+    if extra_instructions:
+        system = f"{system}\n\nAdditional guidance for this specific topic: {extra_instructions}"
+    return _call_gemini(system, prompt).strip()
+
+
+def draft_coach_reply(question: str, lifestyle_summary: str, coach_note: str | None = None) -> str:
+    """Drafts a suggested reply for a human coach responding to a question
+    that was routed to them. The coach reviews and edits this before it ever
+    reaches the athlete — this is a starting point, not a final answer."""
+    system = (
+        "You are helping a certified human coach draft a reply to their athlete's "
+        "question inside the FitMoveLab app. The coach will review and edit your "
+        "draft before sending it — write a solid first draft, not a final answer. "
+        "Use the athlete context below to personalize the response. Keep it short "
+        "(3-6 sentences), warm, and beginner-friendly.\n\n"
+        f"Athlete context:\n{lifestyle_summary}"
+    )
+    prompt = f"Athlete's question: {question}"
+    if coach_note:
+        prompt += f"\nCoach's note on what to emphasize: {coach_note}"
+    return _call_gemini(system, prompt).strip()
+
+
+def answer_coach_question(question: str, extended_context: str) -> str:
+    """Answers a coach's own question about one of their athletes, grounded
+    in that athlete's logged history. For the coach's eyes only — never sent
+    to the athlete."""
+    system = (
+        "You are helping a certified human coach understand more about their "
+        "athlete before responding to them. Answer the coach's question using "
+        "only the athlete data below — if the data doesn't cover it, say so "
+        "plainly rather than guessing. Be concise and factual.\n\n"
+        f"Athlete data:\n{extended_context}"
+    )
+    return _call_gemini(system, question).strip()
 
 
 def coach_recommendation(message: str, coaches_summary: str) -> str:

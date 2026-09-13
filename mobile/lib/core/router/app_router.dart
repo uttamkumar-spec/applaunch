@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/admin/screens/admin_guardrails_screen.dart';
 import '../../features/admin/screens/admin_home_screen.dart';
 import '../../features/ai_coach/screens/ai_chat_screen.dart';
 import '../../features/auth/providers/auth_provider.dart';
@@ -59,6 +60,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/coach-home', builder: (context, state) => const CoachHomeScreen()),
       GoRoute(path: '/admin-home', builder: (context, state) => const AdminHomeScreen()),
       GoRoute(path: '/admin/limits', builder: (context, state) => const AdminLimitsScreen()),
+      GoRoute(path: '/admin/guardrails', builder: (context, state) => const AdminGuardrailsScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) => MainShell(navigationShell: navigationShell),
         branches: [
