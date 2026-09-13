@@ -71,3 +71,24 @@ to existing features); this applies even to brand-new, non-conflicting work.
 - If something already built this way turns out wrong, don't just patch it
   quietly either — surface what was assumed and confirm the correction
   before rebuilding.
+
+## 4. Every new user-generated action feeds the ML training data pipeline
+
+The central `user_interactions` collection (`backend/app/services/interaction_logger.py`)
+is the raw dataset for training a future in-house SLM, exported via
+`backend/scripts/export_training_data.py`. Keep it complete as the product grows:
+
+- Any new feature that produces a meaningful, user-attributable event
+  (a new kind of log, a new AI interaction, a new user-initiated action) must
+  call `log_interaction(...)` with a new or existing entry in `VALID_TYPES`,
+  in addition to whatever normalized collection serves the feature's own
+  queries — don't let a feature ship data-complete for the app but invisible
+  to the training set.
+- Adding a new type means adding it to `VALID_TYPES` and giving the payload a
+  clear, stable shape (avoid free-form blobs that are hard to parse back out
+  per-user later).
+- If a feature's data doesn't cleanly fit any existing type and a new one
+  would be a stretch, say so and propose the type/payload shape rather than
+  overloading an unrelated one — this is a mechanical/data-shape decision,
+  not a product one, so it doesn't need the same sign-off as rule #3, but it
+  should be visible in the same message as the rest of the change.
