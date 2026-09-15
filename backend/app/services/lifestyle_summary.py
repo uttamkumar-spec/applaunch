@@ -7,6 +7,7 @@ in what we actually know about that athlete."""
 from datetime import datetime, timezone
 
 from ..extensions import get_db
+from . import retrieval_service
 
 
 def _current_streak(user_id: str) -> int:
@@ -72,27 +73,36 @@ def build_summary_text(user_id: str) -> str:
     return "\n".join(lines)
 
 
-def build_extended_context(user_id: str, limit: int = 40) -> str:
+def build_extended_context(user_id: str, query: str | None = None, limit: int = 40) -> str:
     """A deeper pull of this athlete's history for a coach asking a specific
-    follow-up question that the compact build_summary_text() doesn't cover —
-    drawn straight from the central user_interactions log, since that's
-    already the record of everything meaningful that's happened to this
-    athlete (chat, nutrition, workouts, goals, form checks, Strava syncs)."""
+    follow-up question that the compact build_summary_text() doesn't cover.
+
+    When `query` is given (the coach's actual question), this tries semantic
+    search over the athlete's embedded interactions first, so a relevant but
+    old event isn't lost in a purely recency-based window. That only works
+    once the Atlas Search index exists and history has been backfilled (see
+    retrieval_service.py) — until then, or when no query is given, this
+    falls back to the most recent events straight from user_interactions,
+    which is always available."""
     db = get_db()
     profile = db.users.find_one({"_id": user_id}) or {}
     onboarding = profile.get("onboarding") or {}
+    lines = [f"Athlete: {profile.get('name') or 'Unknown'}", f"Onboarding answers: {onboarding}"]
+
+    if query:
+        hits = retrieval_service.semantic_search(user_id, query, limit=15)
+        if hits:
+            lines.append(f'\n{len(hits)} events most relevant to "{query}", most relevant first:')
+            for hit in hits:
+                lines.append(f"- [{hit['created_at'].date()}] {hit['type']}: {hit['text']}")
+            return "\n".join(lines)
 
     interactions = list(
         db.user_interactions.find({"user_id": user_id}, {"type": 1, "source": 1, "payload": 1, "created_at": 1})
         .sort("created_at", -1)
         .limit(limit)
     )
-
-    lines = [
-        f"Athlete: {profile.get('name') or 'Unknown'}",
-        f"Onboarding answers: {onboarding}",
-        f"\nMost recent {len(interactions)} logged events, oldest first:",
-    ]
+    lines.append(f"\nMost recent {len(interactions)} logged events, oldest first:")
     for i in reversed(interactions):
         lines.append(f"- [{i['created_at'].date()}] {i['type']} ({i.get('source', 'system')}): {i.get('payload')}")
 

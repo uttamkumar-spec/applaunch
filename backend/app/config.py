@@ -11,6 +11,7 @@ class Config:
 
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
     GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+    GEMINI_EMBEDDING_MODEL = os.environ.get("GEMINI_EMBEDDING_MODEL", "text-embedding-004")
 
     STRAVA_CLIENT_ID = os.environ.get("STRAVA_CLIENT_ID", "")
     STRAVA_CLIENT_SECRET = os.environ.get("STRAVA_CLIENT_SECRET", "")

@@ -258,7 +258,7 @@ def ask_about_athlete(message_id):
     if not question:
         return jsonify({"error": "question is required"}), 400
 
-    extended_context = lifestyle_summary.build_extended_context(item["athlete_id"])
+    extended_context = lifestyle_summary.build_extended_context(item["athlete_id"], query=question)
     try:
         answer = gemini_service.answer_coach_question(question, extended_context)
     except gemini_service.GeminiError as exc:

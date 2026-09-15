@@ -32,6 +32,32 @@ class GeminiError(Exception):
     pass
 
 
+def embed_text(text: str) -> list[float] | None:
+    """Embeds text via Gemini for semantic search. Best-effort: returns None
+    on any failure (unconfigured key, network error, bad response) instead
+    of raising, since embedding is a retrieval nicety — never something that
+    should block a chat reply or a log write."""
+    api_key = current_app.config["GEMINI_API_KEY"]
+    model = current_app.config["GEMINI_EMBEDDING_MODEL"]
+    if not api_key or not text.strip():
+        return None
+
+    try:
+        res = requests.post(
+            f"{_BASE_URL}/{model}:embedContent",
+            params={"key": api_key},
+            json={"content": {"parts": [{"text": text}]}},
+            timeout=15,
+        )
+        if res.status_code >= 400:
+            current_app.logger.warning("Gemini embedding request failed: %s %s", res.status_code, res.text)
+            return None
+        return res.json()["embedding"]["values"]
+    except (requests.exceptions.RequestException, KeyError, ValueError) as exc:
+        current_app.logger.warning("Gemini embedding request failed: %s", exc)
+        return None
+
+
 def _call_gemini(
     system_prompt: str,
     user_prompt: str,

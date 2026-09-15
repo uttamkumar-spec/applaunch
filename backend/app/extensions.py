@@ -35,6 +35,7 @@ def init_mongo(app) -> None:
     _db.chat_guardrails.create_index([("scope", 1), ("coach_id", 1), ("enabled", 1)])
     _db.pending_coach_messages.create_index([("coach_id", 1), ("status", 1)])
     _db.pending_coach_messages.create_index([("athlete_id", 1), ("created_at", -1)])
+    _db.interaction_embeddings.create_index([("user_id", 1), ("created_at", -1)])
 
 
 def get_db() -> Database:
