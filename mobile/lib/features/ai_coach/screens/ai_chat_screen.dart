@@ -33,6 +33,14 @@ class _AiChatScreenState extends ConsumerState<AiChatScreen> {
   Uint8List? _pendingMediaBytes;
   bool _pendingIsVideo = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(chatControllerProvider.notifier).loadHistory().then((_) => _scrollToBottom());
+    });
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {

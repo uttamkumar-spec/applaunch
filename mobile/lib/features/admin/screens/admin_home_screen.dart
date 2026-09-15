@@ -102,6 +102,12 @@ class AdminHomeScreen extends ConsumerWidget {
         title: const Text('Admin'),
         actions: [
           IconButton(
+            tooltip: 'Guardrail rules',
+            icon: const Icon(Icons.rule_rounded),
+            onPressed: () => context.push('/admin/guardrails'),
+          ),
+          IconButton(
+            tooltip: 'Platform limits',
             icon: const Icon(Icons.tune_rounded),
             onPressed: () => context.push('/admin/limits'),
           ),

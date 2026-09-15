@@ -12,3 +12,7 @@ final adminUsersProvider = FutureProvider.autoDispose((ref) {
 final platformLimitsProvider = FutureProvider.autoDispose((ref) {
   return ref.watch(adminServiceProvider).fetchLimits();
 });
+
+final adminGuardrailsProvider = FutureProvider.autoDispose((ref) {
+  return ref.watch(adminServiceProvider).fetchGuardrails();
+});

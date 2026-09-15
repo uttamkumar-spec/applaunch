@@ -6,6 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../providers/coach_provider.dart';
 import 'coach_athlete_detail_screen.dart';
+import 'coach_guardrails_screen.dart';
+import 'coach_pending_messages_screen.dart';
 
 class CoachHomeScreen extends ConsumerWidget {
   const CoachHomeScreen({super.key});
@@ -19,6 +21,20 @@ class CoachHomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Coach Dashboard'),
         actions: [
+          IconButton(
+            tooltip: 'Athlete questions',
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CoachPendingMessagesScreen()),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Guardrail rules',
+            icon: const Icon(Icons.rule_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CoachGuardrailsScreen()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {

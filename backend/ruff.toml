@@ -1,0 +1,10 @@
+line-length = 120
+
+[lint]
+select = ["E", "F", "W"]
+
+[lint.per-file-ignores]
+# Long literal copy/text strings (AI fallback responses, seed workout content),
+# not code that benefits from wrapping.
+"app/routes/form_analysis.py" = ["E501"]
+"app/services/seed_data.py" = ["E501"]

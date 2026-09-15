@@ -5,7 +5,7 @@ from flask import Blueprint, g, jsonify, request
 
 from ..auth import require_auth, require_role
 from ..extensions import get_db, limiter
-from ..services import gemini_service
+from ..services import gemini_service, lifestyle_summary
 from ..services.interaction_logger import log_interaction
 
 bp = Blueprint("coach", __name__, url_prefix="/api")
@@ -185,3 +185,114 @@ def push_plan(athlete_id):
         source="coach",
     )
     return jsonify({"status": "pushed"})
+
+
+def _serialize_pending(item: dict, db) -> dict:
+    athlete = db.users.find_one({"_id": item["athlete_id"]}, {"name": 1})
+    return {
+        "id": str(item["_id"]),
+        "athlete_id": item["athlete_id"],
+        "athlete_name": (athlete or {}).get("name", "Athlete"),
+        "message": item["message"],
+        "matched_rule_label": item.get("matched_rule_label"),
+        "created_at": item["created_at"].isoformat(),
+    }
+
+
+@bp.get("/coach/pending-messages")
+@require_role("coach")
+def list_pending_messages():
+    db = get_db()
+    items = list(db.pending_coach_messages.find({"coach_id": g.user_id, "status": "pending"}).sort("created_at", 1))
+    return jsonify([_serialize_pending(item, db) for item in items])
+
+
+@bp.get("/coach/pending-messages/<message_id>")
+@require_role("coach")
+def get_pending_message(message_id):
+    db = get_db()
+    item = db.pending_coach_messages.find_one({"_id": ObjectId(message_id), "coach_id": g.user_id})
+    if not item:
+        return jsonify({"error": "not found"}), 404
+
+    out = _serialize_pending(item, db)
+    out["lifestyle_summary"] = lifestyle_summary.build_summary_text(item["athlete_id"])
+    return jsonify(out)
+
+
+@bp.post("/coach/pending-messages/<message_id>/draft")
+@require_role("coach")
+@limiter.limit("20/minute")
+def draft_pending_message_reply(message_id):
+    db = get_db()
+    item = db.pending_coach_messages.find_one({"_id": ObjectId(message_id), "coach_id": g.user_id})
+    if not item:
+        return jsonify({"error": "not found"}), 404
+
+    body = request.get_json(force=True) or {}
+    coach_note = (body.get("coach_note") or "").strip() or None
+    summary_text = lifestyle_summary.build_summary_text(item["athlete_id"])
+
+    try:
+        draft = gemini_service.draft_coach_reply(item["message"], summary_text, coach_note)
+    except gemini_service.GeminiError as exc:
+        return jsonify({"error": str(exc)}), 502
+
+    return jsonify({"draft": draft})
+
+
+@bp.post("/coach/pending-messages/<message_id>/ask")
+@require_role("coach")
+@limiter.limit("20/minute")
+def ask_about_athlete(message_id):
+    """Lets the coach ask a free-form follow-up about this athlete's broader
+    history before drafting a reply — separate from /draft, which drafts the
+    athlete-facing reply itself. This answer is for the coach only."""
+    db = get_db()
+    item = db.pending_coach_messages.find_one({"_id": ObjectId(message_id), "coach_id": g.user_id})
+    if not item:
+        return jsonify({"error": "not found"}), 404
+
+    body = request.get_json(force=True) or {}
+    question = (body.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "question is required"}), 400
+
+    extended_context = lifestyle_summary.build_extended_context(item["athlete_id"], query=question)
+    try:
+        answer = gemini_service.answer_coach_question(question, extended_context)
+    except gemini_service.GeminiError as exc:
+        return jsonify({"error": str(exc)}), 502
+
+    return jsonify({"answer": answer})
+
+
+@bp.post("/coach/pending-messages/<message_id>/respond")
+@require_role("coach")
+def respond_to_pending_message(message_id):
+    db = get_db()
+    item = db.pending_coach_messages.find_one(
+        {"_id": ObjectId(message_id), "coach_id": g.user_id, "status": "pending"}
+    )
+    if not item:
+        return jsonify({"error": "not found or already answered"}), 404
+
+    body = request.get_json(force=True) or {}
+    reply = (body.get("reply") or "").strip()
+    if not reply:
+        return jsonify({"error": "reply is required"}), 400
+
+    now = datetime.now(timezone.utc)
+    db.chat_messages.insert_one({"user_id": item["athlete_id"], "role": "coach", "text": reply, "created_at": now})
+    db.pending_coach_messages.update_one(
+        {"_id": item["_id"]},
+        {"$set": {"status": "answered", "coach_reply": reply, "answered_at": now}},
+    )
+
+    log_interaction(
+        item["athlete_id"],
+        "chat_message",
+        {"user_message": item["message"], "coach_reply": reply},
+        source=f"coach:{g.user_id}",
+    )
+    return jsonify({"status": "answered"})

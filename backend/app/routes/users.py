@@ -30,7 +30,7 @@ def get_me():
 @require_auth
 def update_onboarding():
     body = request.get_json(force=True) or {}
-    profile = ensure_profile(g.user_id, g.user_email, g.user_metadata.get("full_name"))
+    ensure_profile(g.user_id, g.user_email, g.user_metadata.get("full_name"))
 
     db = get_db()
     db.users.update_one({"_id": g.user_id}, {"$set": {"onboarding": body}})
