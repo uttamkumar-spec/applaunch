@@ -12,3 +12,7 @@ final coachRequestsProvider = FutureProvider.autoDispose((ref) {
 final assignedAthletesProvider = FutureProvider.autoDispose((ref) {
   return ref.watch(coachServiceProvider).fetchAthletes();
 });
+
+final coachGroupsProvider = FutureProvider.autoDispose((ref) {
+  return ref.watch(coachServiceProvider).fetchGroups();
+});

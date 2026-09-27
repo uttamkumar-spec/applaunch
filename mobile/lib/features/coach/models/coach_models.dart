@@ -66,3 +66,23 @@ class AssignedAthlete {
         currentStreak: j['current_streak'] as int? ?? 0,
       );
 }
+
+class CoachGroup {
+  CoachGroup({
+    required this.id,
+    required this.name,
+    required this.athleteIds,
+  });
+
+  final String id;
+  final String name;
+  final List<String> athleteIds;
+
+  int get memberCount => athleteIds.length;
+
+  factory CoachGroup.fromJson(Map<String, dynamic> j) => CoachGroup(
+        id: j['id'].toString(),
+        name: j['name'] as String? ?? 'Group',
+        athleteIds: (j['athlete_ids'] as List? ?? []).map((e) => e.toString()).toList(),
+      );
+}

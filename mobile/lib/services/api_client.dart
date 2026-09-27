@@ -51,6 +51,11 @@ class ApiClient {
     return _decode(res);
   }
 
+  Future<dynamic> delete(String path) async {
+    final res = await _client.delete(_uri(path), headers: _headers).timeout(const Duration(seconds: 8));
+    return _decode(res);
+  }
+
   dynamic _decode(http.Response res) {
     if (res.statusCode >= 200 && res.statusCode < 300) {
       if (res.body.isEmpty) return null;

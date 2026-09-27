@@ -137,22 +137,33 @@ def list_athletes():
 def generate_plan():
     body = request.get_json(force=True) or {}
     athlete_id = body.get("athlete_id")
+    group_id = body.get("group_id")
     notes = body.get("notes")
-    if not athlete_id:
-        return jsonify({"error": "athlete_id is required"}), 400
 
     db = get_db()
-    athlete = db.users.find_one({"_id": athlete_id})
-    if not athlete:
-        return jsonify({"error": "athlete not found"}), 404
-
-    onboarding = athlete.get("onboarding") or {}
-    profile_summary = (
-        f"experience: {onboarding.get('experience_level', 'unknown')}, "
-        f"goal: {onboarding.get('primary_goal', 'general fitness')}, "
-        f"days/week available: {onboarding.get('days_per_week', 3)}, "
-        f"equipment: {onboarding.get('equipment_access', 'none')}"
-    )
+    if athlete_id:
+        athlete = db.users.find_one({"_id": athlete_id})
+        if not athlete:
+            return jsonify({"error": "athlete not found"}), 404
+        onboarding = athlete.get("onboarding") or {}
+        profile_summary = (
+            f"experience: {onboarding.get('experience_level', 'unknown')}, "
+            f"goal: {onboarding.get('primary_goal', 'general fitness')}, "
+            f"days/week available: {onboarding.get('days_per_week', 3)}, "
+            f"equipment: {onboarding.get('equipment_access', 'none')}"
+        )
+    elif group_id:
+        group = db.groups.find_one({"_id": ObjectId(group_id), "coach_id": g.user_id})
+        if not group:
+            return jsonify({"error": "group not found"}), 404
+        profile_summary = (
+            f"This plan is for a group of {len(group.get('athlete_ids', []))} athletes with "
+            "varying fitness levels — rely on the coach's notes below rather than any single "
+            "athlete's profile, and keep exercises adaptable (call out easier/harder variations "
+            "where it matters)."
+        )
+    else:
+        return jsonify({"error": "athlete_id or group_id is required"}), 400
 
     try:
         plan = gemini_service.generate_workout_plan(profile_summary, notes)
@@ -185,3 +196,114 @@ def push_plan(athlete_id):
         source="coach",
     )
     return jsonify({"status": "pushed"})
+
+
+@bp.post("/coach/plans/push-bulk")
+@require_role("coach")
+def push_plan_bulk():
+    """Pushes one plan to several athletes at once — either an explicit list
+    of athlete_ids or every member of a group. Reuses the same active_plans
+    write and interaction log as the single-athlete push, just looped."""
+    body = request.get_json(force=True) or {}
+    plan = body.get("plan")
+    if not plan:
+        return jsonify({"error": "plan is required"}), 400
+
+    db = get_db()
+    athlete_ids = body.get("athlete_ids")
+    group_id = body.get("group_id")
+
+    if group_id:
+        group = db.groups.find_one({"_id": ObjectId(group_id), "coach_id": g.user_id})
+        if not group:
+            return jsonify({"error": "group not found"}), 404
+        athlete_ids = group.get("athlete_ids", [])
+    elif not isinstance(athlete_ids, list) or not athlete_ids:
+        return jsonify({"error": "athlete_ids or group_id is required"}), 400
+
+    valid_athlete_ids = [
+        a["_id"] for a in db.users.find({"_id": {"$in": athlete_ids}, "coach_id": g.user_id}, {"_id": 1})
+    ]
+
+    for athlete_id in valid_athlete_ids:
+        db.active_plans.update_one(
+            {"_id": athlete_id},
+            {"$set": {"plan": plan, "assigned_by": g.user_id, "updated_at": datetime.now(timezone.utc)}},
+            upsert=True,
+        )
+        log_interaction(
+            athlete_id,
+            "workout_plan_assigned",
+            {"plan": plan, "assigned_by_coach": g.user_id},
+            source="coach",
+        )
+
+    return jsonify({"status": "pushed", "athlete_count": len(valid_athlete_ids)})
+
+
+@bp.get("/coach/groups")
+@require_role("coach")
+def list_groups():
+    db = get_db()
+    groups = list(db.groups.find({"coach_id": g.user_id}))
+    return jsonify(
+        [
+            {
+                "id": str(group["_id"]),
+                "name": group["name"],
+                "athlete_ids": group.get("athlete_ids", []),
+                "member_count": len(group.get("athlete_ids", [])),
+            }
+            for group in groups
+        ]
+    )
+
+
+@bp.post("/coach/groups")
+@require_role("coach")
+def create_group():
+    body = request.get_json(force=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "name is required"}), 400
+
+    db = get_db()
+    doc = {
+        "coach_id": g.user_id,
+        "name": name,
+        "athlete_ids": [],
+        "created_at": datetime.now(timezone.utc),
+    }
+    result = db.groups.insert_one(doc)
+    return jsonify({"id": str(result.inserted_id), "name": name, "athlete_ids": [], "member_count": 0}), 201
+
+
+@bp.put("/coach/groups/<group_id>/members")
+@require_role("coach")
+def update_group_members(group_id):
+    body = request.get_json(force=True) or {}
+    athlete_ids = body.get("athlete_ids")
+    if not isinstance(athlete_ids, list):
+        return jsonify({"error": "athlete_ids must be a list"}), 400
+
+    db = get_db()
+    group = db.groups.find_one({"_id": ObjectId(group_id), "coach_id": g.user_id})
+    if not group:
+        return jsonify({"error": "group not found"}), 404
+
+    # Only athletes actually assigned to this coach can be added.
+    valid_ids = [
+        a["_id"] for a in db.users.find({"_id": {"$in": athlete_ids}, "coach_id": g.user_id}, {"_id": 1})
+    ]
+    db.groups.update_one({"_id": group["_id"]}, {"$set": {"athlete_ids": valid_ids}})
+    return jsonify({"id": group_id, "athlete_ids": valid_ids, "member_count": len(valid_ids)})
+
+
+@bp.delete("/coach/groups/<group_id>")
+@require_role("coach")
+def delete_group(group_id):
+    db = get_db()
+    result = db.groups.delete_one({"_id": ObjectId(group_id), "coach_id": g.user_id})
+    if result.deleted_count == 0:
+        return jsonify({"error": "group not found"}), 404
+    return jsonify({"status": "deleted"})
