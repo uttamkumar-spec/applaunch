@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../messaging/providers/message_provider.dart';
 import '../../workouts/models/workout_plan.dart';
 import '../models/coach_models.dart';
 import '../providers/coach_provider.dart';
@@ -17,17 +18,48 @@ class CoachGroupDetailScreen extends ConsumerStatefulWidget {
 
 class _CoachGroupDetailScreenState extends ConsumerState<CoachGroupDetailScreen> {
   final _notesController = TextEditingController();
+  final _groupMessageController = TextEditingController();
   late Set<String> _selectedMemberIds;
   WorkoutPlan? _draft;
   bool _savingMembers = false;
   bool _generating = false;
   bool _pushing = false;
+  bool _sendingGroupMessage = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _selectedMemberIds = widget.group.athleteIds.toSet();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _groupMessageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendGroupMessage() async {
+    final text = _groupMessageController.text.trim();
+    if (text.isEmpty || _sendingGroupMessage) return;
+    setState(() => _sendingGroupMessage = true);
+    try {
+      final count = await ref.read(messageServiceProvider).broadcastToGroup(widget.group.id, text);
+      _groupMessageController.clear();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Message sent to $count athlete${count == 1 ? '' : 's'}.')),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Couldn't send. Try again shortly.")));
+      }
+    } finally {
+      if (mounted) setState(() => _sendingGroupMessage = false);
+    }
   }
 
   Future<void> _saveMembers() async {
@@ -134,6 +166,35 @@ class _CoachGroupDetailScreenState extends ConsumerState<CoachGroupDetailScreen>
             child: _savingMembers
                 ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : Text('Save members (${_selectedMemberIds.length})'),
+          ),
+          const Divider(height: 40),
+          Text('Message the group', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            'Sends the same message into every member\'s individual thread with you.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _groupMessageController,
+                  minLines: 1,
+                  maxLines: 4,
+                  decoration: const InputDecoration(hintText: 'Type a message to the whole group…'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filled(
+                onPressed: _sendingGroupMessage ? null : _sendGroupMessage,
+                icon: _sendingGroupMessage
+                    ? const SizedBox(
+                        height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.send_rounded),
+              ),
+            ],
           ),
           const Divider(height: 40),
           Text('Draft a plan with AI', style: Theme.of(context).textTheme.titleLarge),

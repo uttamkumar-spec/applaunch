@@ -31,6 +31,8 @@ def init_mongo(app) -> None:
     _db.strava_tokens.create_index("user_id", unique=True)
     _db.coach_requests.create_index([("athlete_id", 1), ("status", 1)])
     _db.groups.create_index("coach_id")
+    _db.messages.create_index([("coach_id", 1), ("athlete_id", 1), ("created_at", 1)])
+    _db.message_threads.create_index("coach_id")
     _db.user_interactions.create_index([("user_id", 1), ("created_at", -1)])
     _db.user_interactions.create_index("type")
 

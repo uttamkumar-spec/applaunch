@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../messaging/providers/message_provider.dart';
+import '../../messaging/screens/chat_thread_screen.dart';
 import '../providers/coach_provider.dart';
 import 'coach_athlete_detail_screen.dart';
 import 'coach_group_detail_screen.dart';
@@ -81,6 +83,7 @@ class CoachHomeScreen extends ConsumerWidget {
     final requestsAsync = ref.watch(coachRequestsProvider);
     final athletesAsync = ref.watch(assignedAthletesProvider);
     final groupsAsync = ref.watch(coachGroupsProvider);
+    final threadsAsync = ref.watch(coachThreadsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -100,6 +103,7 @@ class CoachHomeScreen extends ConsumerWidget {
           ref.invalidate(coachRequestsProvider);
           ref.invalidate(assignedAthletesProvider);
           ref.invalidate(coachGroupsProvider);
+          ref.invalidate(coachThreadsProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -203,6 +207,46 @@ class CoachHomeScreen extends ConsumerWidget {
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => CoachGroupDetailScreen(group: group)),
                         ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+            const SizedBox(height: 28),
+            Text('Messages', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            threadsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Text('Could not load messages: $e'),
+              data: (threads) {
+                if (threads.isEmpty) {
+                  return const Text('No athletes to message yet.');
+                }
+                return Column(
+                  children: threads.map((t) {
+                    return Card(
+                      child: ListTile(
+                        leading: Icon(
+                          t.unread ? Icons.mark_chat_unread_rounded : Icons.chat_bubble_outline_rounded,
+                          color: t.unread ? AppColors.primary : null,
+                        ),
+                        title: Text(t.athleteName),
+                        subtitle: Text(
+                          t.lastMessage ?? 'No messages yet — say hello.',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontWeight: t.unread ? FontWeight.w700 : FontWeight.normal),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => CoachChatScreen(athleteId: t.athleteId, athleteName: t.athleteName),
+                            ),
+                          );
+                          ref.invalidate(coachThreadsProvider);
+                        },
                       ),
                     );
                   }).toList(),

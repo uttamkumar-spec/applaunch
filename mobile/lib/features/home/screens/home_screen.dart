@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../auth/providers/profile_provider.dart';
+import '../../messaging/screens/chat_thread_screen.dart';
 import '../../progress/providers/progress_provider.dart';
 import '../../workouts/providers/workout_provider.dart';
 import '../../workouts/screens/workout_day_screen.dart';
@@ -19,6 +20,10 @@ class HomeScreen extends ConsumerWidget {
     final firstName = (user?.userMetadata?['full_name'] as String?)?.split(' ').first;
     final planAsync = ref.watch(activePlanProvider);
     final summaryAsync = ref.watch(progressSummaryProvider);
+    final hasCoach = ref.watch(profileProvider).maybeWhen(
+          data: (p) => p?['coach_id'] != null,
+          orElse: () => false,
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -112,6 +117,16 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 12),
+          if (hasCoach)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _QuickLink(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: 'Message your coach',
+                onTap: () => Navigator.of(context)
+                    .push(MaterialPageRoute(builder: (_) => const AthleteChatScreen())),
+              ),
+            ),
           _QuickLink(
             icon: Icons.groups_rounded,
             label: 'Find a human coach',
